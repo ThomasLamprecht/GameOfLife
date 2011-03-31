@@ -22,7 +22,7 @@ or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 int main(void)
 {
 	srand(time(NULL));
-	int i,run=1;
+	int i,run=1,oszil_chk=1;
 	// Game specific Variables
 	int **field,**eval_field,**history[H];
 	unsigned long int generations=0;
@@ -32,20 +32,21 @@ int main(void)
 	int sel,size=5,real_size=0;
 	char **menu,tmp;
 	menu = createMenu(size);
-	appendItem(menu,"Run Game",size,&real_size);
-	appendItem(menu,"Save",size,&real_size);
-	appendItem(menu,"Load",size,&real_size);
-	appendItem(menu,"Quit",size,&real_size);
+	appendItem(menu,"Spielen",size,&real_size);
+	appendItem(menu,"Speichern",size,&real_size);
+	appendItem(menu,"Laden",size,&real_size);
+	appendItem(menu,"Verlassen",size,&real_size);
 	do
 	{
 		sel=getSelection(menu,0,real_size+1);
-		printf("You chose \"%s\"\n",menu[sel]);
+		printf("Sie wählten \"%s\"\n",menu[sel]);
 	
 		switch(sel)
 		{
 			case 0: // Run game
 			{			
 				run=1;
+				oszil_chk=1;
 				if(nfo.pos!=NULL)free(nfo.pos);
 				init(&nfo);
 				field = createField(nfo);
@@ -66,10 +67,17 @@ int main(void)
 				{
 					// Equal Check
 					system("clear");
-					if(checkReps(field,history,H,nfo))
+					if(oszil_chk)
 					{
-						run=0;
-						printf("Lebensschemata wiederholt sich (Oszillierendes Objekt)\n");
+						if(checkReps(field,history,H,nfo))
+						{
+							oszil_chk=0;
+							printf("Lebensschemata wiederholt sich (Oszillierendes Objekt).\n");
+							printf("Spiel pausiert! Drücken Sie 'p' um fortzufahren...\nSollten sie das Spiel beenden wollen, fahren sie fort und betätigen 'q'.\n");
+							printField(field,nfo);						
+							waitKey('p');
+							system("clear");							
+						}
 					}
 					mvFieldArray(history,H);
 					cpField(field,history[0],nfo);
@@ -94,7 +102,7 @@ int main(void)
 					}
 					else if(tmp=='p')
 					{
-						printf("Game Paused! Press 'p' again to continue...\n");
+						printf("Spiel pausiert! Drücken Sie 'p' erneut um fortzufahren...\n");
 						waitKey('p');
 						continue;
 					}
@@ -158,7 +166,7 @@ int main(void)
 			}	
 		}
 	}while(sel!=3);
-	printf("Good Bye... (:\n");
+	printf("\nGood Bye... (:\n\n");
 	freeMenu(menu,size);
 	return 0;
 }
