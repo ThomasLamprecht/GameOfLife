@@ -100,8 +100,8 @@ int main(void)
 				}
 				FILE *f = initFile("gameoflife.data");
 				char puffer[150];
-				printf("Name des Spieles [Max 150 Zeichen;Keine Leerzeichen]:\n");
-				mFlush();
+				printf("Name des Spieles [Max 150 Zeichen;]:\n");
+				fflush(stdout);//mFlush();
 				fgets(puffer,150,stdin);				
 				rmNl(puffer,150);
 				fprintf(f,"BEGIN %s\n",puffer);
@@ -109,16 +109,16 @@ int main(void)
 				for(i=0;i<nfo.start_lifes;i++)
 					fprintf(f,"\t%d,%d\n",nfo.pos[i].x,nfo.pos[i].y);
 				fprintf(f,"END\n\n");
-				printf("Speichern Erfolgreich!\nWeiter mit 'q'...\n");
-				waitKey('q');		
+				printf("Speichern von \"%s\" Erfolgreich!\nWeiter mit 'q'...\n",puffer);						
 				fclose(f);
+				waitKey('q');
 				break;
 			}
 			case 2: // Load
 			{
 				int saved_n=0,saved_real_s,sel_game;
 				FILE *f = initFile("gameoflife.data");
-				char puffer[150],name[150],**data_menu;				
+				char puffer[160],name[160],**data_menu;				
 				if((saved_n = countSaved(f)+1)>0)
 				{				
 					data_menu=createMenu(saved_n);
@@ -158,13 +158,19 @@ void waitKey(char key)
 //
 int addSavedToMenu(char **menu, FILE *f, int saved_n)
 {
-	int i=0;
-	char puffer[150],name[150];
-	while((fgets(puffer,150,f)) != NULL )
+	int i=0,j,k;
+	char puffer[160],name[160];
+	while(fgets(puffer,160,f)!=NULL)
 	{
 		if(strncmp(puffer,"BEGIN ",6)==0)
-		{	
-			sscanf(puffer,"BEGIN %s\n",name);				
+		{
+			for(j=0;puffer[j]!=' '&j<160;j++)
+				continue;
+			j++;
+			for(k=j;puffer[k]!='\n';k++)
+				name[k-j]=puffer[k];
+			name[k]='\0';				
+			//rmNl(name,160);						
 			appendItem(menu,name,saved_n,&i);
 		}					
 	}
@@ -477,7 +483,7 @@ FILE *initFile(char *name)
 void mFlush()
 {
 	char c;
-	while((c=getchar())!=EOF&&c!='\n'&&c!='\0')
+	while((c=getchar())!=EOF&&c!='\n')
 		continue;
 	return;
 }
