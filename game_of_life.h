@@ -25,6 +25,7 @@ or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 #define H 10
 #define DEAD -1
 #define ALIVE 1
+#define PFR_L 160
 
 typedef struct _posi
 {
@@ -34,6 +35,7 @@ typedef struct _posi
 typedef struct _gameInfo
 {
 	unsigned int w,h,start_lifes,living,delay;
+	unsigned long int generations;
 	posi *pos;
 } gameInfo;
 
@@ -42,6 +44,12 @@ struct clist
 	char *content;
 	int id;
 	struct clist *next;
+};
+
+struct posList
+{
+	posi pos;
+	struct posList *next;
 };
 
 const char alive_char = '#',dead_char=' ';
@@ -72,5 +80,7 @@ void mvFieldArray(int ***f, int l);
 FILE *initFile(char *name);
 int countSaved(FILE *f);
 int addSavedToMenu(char **menu, FILE *f, int saved_n);
+void getSavedData(FILE *f, char *name, int id, gameInfo *nfo);
 void mFlush();
 void rmNl(char *s, int l);
+void clrs(char *s, int l);

@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
+// printf("%d\n",__LINE__); // <- The famous debugging helper ;)
 */
 #include "game_of_life.h"
 
@@ -24,12 +25,12 @@ int main(void)
 	srand(time(NULL));
 	int i,run=1,oszil_chk=1;
 	// Game specific Variables
-	int **field,**eval_field,**history[H];
-	unsigned long int generations=0;
+	int **field,**eval_field,**history[H];	 
 	gameInfo nfo;
 	nfo.pos=NULL;
+	nfo.generations=0;
 
-	int sel,size=5,real_size=0;
+	int sel=0,size=5,real_size=0;
 	char **menu,tmp;
 	menu = createMenu(size);
 	appendItem(menu,"Spielen",size,&real_size);
@@ -38,7 +39,7 @@ int main(void)
 	appendItem(menu,"Verlassen",size,&real_size);
 	do
 	{
-		sel=getSelection(menu,0,real_size+1);
+		sel=getSelection(menu,sel,real_size+1);
 		printf("Sie wählten \"%s\"\n",menu[sel]);
 	
 		switch(sel)
@@ -65,35 +66,34 @@ int main(void)
 				// main loop
 				while(run)
 				{
-					// Equal Check
 					system("clear");
+					nfo.living = living(field,nfo);					
+					printField(field,nfo);
+					evalField(field,eval_field,nfo);
+					// Dead Check
+					if(nfo.living==0)
+					{
+						run=0;
+						printf("Es ist niemand mehr am Leben (Allein, Allein), Sie Monster! >_<\nNach %d Generationen.\n'q' zum fortfahren",nfo.generations);
+						waitKey('q');
+					}
+					// Equal Check START
 					if(oszil_chk)
 					{
 						if(checkReps(field,history,H,nfo))
 						{
 							oszil_chk=0;
 							printf("Lebensschemata wiederholt sich (Oszillierendes Objekt).\n");
-							printf("Spiel pausiert! Drücken Sie 'p' um fortzufahren...\nSollten sie das Spiel beenden wollen, fahren sie fort und betätigen 'q'.\n");
-							printField(field,nfo);						
-							waitKey('p');
-							system("clear");							
+							printf("Spiel pausiert! Drücken Sie 'p' um fortzufahren...\nSollten sie das Spiel beenden wollen, fahren sie fort und betätigen 'q'.\n");		
+							waitKey('p');							
 						}
 					}
 					mvFieldArray(history,H);
 					cpField(field,history[0],nfo);
 					// Equal Check END
-					// Dead Check
-					if(isDead(field,nfo))
-					{
-						run=0;
-						printf("Es ist niemand mehr am Leben (Allein, Allein), Sie Monster! >_<\nNach %d Generationen.\n",generations);
-					}					
-					printf("%ld\n",generations);
-					printField(field,nfo);
-					evalField(field,eval_field,nfo);
-					//printMx(eval_field, nfo);
 					executeRules(field,eval_field,nfo);
-					generations++;
+					nfo.generations++;
+					// Input Op's
 					tmp = getch_nonblock();					
 					if(tmp=='q')
 					{
@@ -145,7 +145,7 @@ int main(void)
 			{
 				int saved_n=0,saved_real_s,sel_game;
 				FILE *f = initFile("gameoflife.data");
-				char puffer[160],name[160],**data_menu;				
+				char puffer[PFR_L],name[PFR_L],**data_menu;				
 				if((saved_n = countSaved(f)+1)>0)
 				{				
 					data_menu=createMenu(saved_n);
@@ -153,6 +153,12 @@ int main(void)
 					sel_game=getSelection(data_menu,0,saved_real_s+1);
 					if(sel_game==saved_n-1) break;
 					printf("You chose \"%s\"\n",data_menu[sel_game]);
+					getSavedData(f, data_menu[sel_game], sel_game, &nfo);
+					if(nfo.pos!=NULL) // Get this Fuck away to let loading be functionally
+					{
+						free(nfo.pos);
+						nfo.pos=NULL;
+					}
 					freeMenu(data_menu,saved_n);
 					waitKey('q');					
 				}
@@ -179,26 +185,72 @@ void waitKey(char key)
 	{
 		usleep(20*1000);
 		if(getch_nonblock()==key) run=0;
-	}	
+	}
+	return;	
+}
+
+void getSavedData(FILE *f, char *name, int id, gameInfo *nfo)
+{
+	int i,j,k,save_no=0;
+	char puffer[PFR_L],begin_row[PFR_L]="BEGIN ";
+	strncat(begin_row,name,PFR_L);
+	strncat(begin_row,"\n",PFR_L);
+	fseek(f,0L,SEEK_SET);
+	while(fgets(puffer,PFR_L,f)!=NULL)
+	{
+		if(strncmp(puffer,"BEGIN ",6)==0)
+		{			
+			if(strncmp(puffer,begin_row,PFR_L)==0)
+			{							
+				if(save_no==id)
+				{
+					fscanf(f, "H %d\n", &nfo->h);
+					fscanf(f, "W %d\n", &nfo->w);
+					fscanf(f, "LIFES %d\n", &nfo->start_lifes);
+					if(nfo->pos!=NULL)
+					{
+						free(nfo->pos);
+						nfo->pos=NULL;
+					}
+					nfo->pos = (posi *) malloc(nfo->start_lifes*sizeof(posi));
+					for(i=0;i<nfo->start_lifes;i++)
+					{
+						fscanf(f, "%d,%d\n", &nfo->pos[i].x,&nfo->pos[i].y);
+					}
+					printf("Loading succeed\n%s\n%d\n%d\n%d",name,nfo->h,nfo->w,nfo->start_lifes);
+					fgets(puffer,PFR_L,f);
+					if(strncmp(puffer,"END",3)==0)
+						return;
+					else
+					{
+						fputs("Here should be the END!\nCheck the gameoflife.data file!",stderr);
+						exit(1);
+					}
+				}			
+			}
+			save_no++;
+		}					
+	}
+	return;
 }
 
 //
 int addSavedToMenu(char **menu, FILE *f, int saved_n)
 {
 	int i=0,j,k;
-	char puffer[160],name[160];
-	while(fgets(puffer,160,f)!=NULL)
+	char puffer[PFR_L],name[PFR_L];
+	while(fgets(puffer,PFR_L,f)!=NULL)
 	{
 		if(strncmp(puffer,"BEGIN ",6)==0)
 		{
-			for(j=0;puffer[j]!=' '&j<160;j++)
+			for(j=0;puffer[j]!=' '&&j<PFR_L;j++)
 				continue;
 			j++;
-			for(k=j;puffer[k]!='\n';k++)
+			for(k=j;puffer[k]!='\n'&&k<PFR_L;k++)
 				name[k-j]=puffer[k];
-			name[k]='\0';				
-			//rmNl(name,160);						
+			name[k]='\0';					
 			appendItem(menu,name,saved_n,&i);
+			clrs(name,PFR_L);
 		}					
 	}
 	appendItem(menu,"Quit",saved_n,&i);
@@ -224,6 +276,7 @@ int countSaved(FILE *f)
 void init(gameInfo *nfo)
 {
 	int i,fail=0,rnd=0;
+	fflush(stdout);
 	printf("Height:\t");
 	scanf("%d",&nfo->h);
 	printf("Width:\t");
@@ -301,7 +354,8 @@ void freeField(int **field, int h)
 void printField(int **field, gameInfo nfo)
 {
 	int i,j,k,l;
-
+	printf("| Generation: %ld\n",nfo.generations);
+	printf("| Zu Begin Lebend: %ld\t Aktuell Lebend: %ld\n",nfo.start_lifes,nfo.living);
 	for(i=0;i<nfo.h;i++)
 	{
 		if(i==0)
@@ -488,18 +542,19 @@ void cpField(int **src, int **dst, gameInfo nfo)
 	return;
 }
 // Checks if anybody is alive
-int isDead(int **field, gameInfo nfo)
+int living(int **field, gameInfo nfo)
 {
 	int i,j;
+	unsigned int living=0;
 	for(i=0;i<nfo.h;i++)
 	{
 		for(j=0;j<nfo.w;j++)
 		{
 			if(field[i][j]==ALIVE)
-				return 0;
+				living++;
 		}
 	}
-	return 1;
+	return living;
 }
 FILE *initFile(char *name)
 {
@@ -520,5 +575,12 @@ void rmNl(char *s, int l)
 	for(i=0;s[i]!='\n'&&i<l;i++)
 		continue;
 	s[i]='\0';
+	return;
+}
+void clrs(char *s, int l)
+{
+	int i;
+	for(i=0;i<l;i++)
+		s[i]='\0';
 	return;
 }
