@@ -1,5 +1,6 @@
 CC = gcc
-out = build/v0.9b
+version = 0.9b
+out = gof-$(version).bin
 
 gameoflife: game_of_life.o modul_menu.o
 	$(CC) -o $(out) game_of_life.o modul_menu.o 

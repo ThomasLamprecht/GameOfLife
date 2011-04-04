@@ -45,11 +45,12 @@ int main(void)
 		switch(sel)
 		{
 			case 0: // Run game
-			{			
-				run=1;
-				oszil_chk=1;
+			{				
 				if(nfo.pos!=NULL)free(nfo.pos);
 				init(&nfo);
+				load_label:
+				run=1;
+				oszil_chk=1;
 				field = createField(nfo);
 				eval_field = createField(nfo);
 				for(i=0;i<H;i++)
@@ -78,7 +79,7 @@ int main(void)
 						waitKey('q');
 					}
 					// Equal Check START
-					if(oszil_chk)
+					if(oszil_chk&&run!=0)
 					{
 						if(checkReps(field,history,H,nfo))
 						{
@@ -154,12 +155,15 @@ int main(void)
 					if(sel_game==saved_n-1) break;
 					printf("You chose \"%s\"\n",data_menu[sel_game]);
 					getSavedData(f, data_menu[sel_game], sel_game, &nfo);
-					if(nfo.pos!=NULL) // Get this Fuck away to let loading be functionally
+					/*if(nfo.pos!=NULL) // Get this Fuck away to let loading be functionally
 					{
 						free(nfo.pos);
 						nfo.pos=NULL;
-					}
+					}*/
 					freeMenu(data_menu,saved_n);
+					printf("Delay/clock [ms]:\t");
+					scanf("%d",&nfo.delay);
+					goto load_label;
 					waitKey('q');					
 				}
 				else
@@ -177,100 +181,6 @@ int main(void)
 	return 0;
 }
 
-// Waits for key pressing
-void waitKey(char key)
-{
-	int run=1;
-	while(run)
-	{
-		usleep(20*1000);
-		if(getch_nonblock()==key) run=0;
-	}
-	return;	
-}
-
-void getSavedData(FILE *f, char *name, int id, gameInfo *nfo)
-{
-	int i,j,k,save_no=0;
-	char puffer[PFR_L],begin_row[PFR_L]="BEGIN ";
-	strncat(begin_row,name,PFR_L);
-	strncat(begin_row,"\n",PFR_L);
-	fseek(f,0L,SEEK_SET);
-	while(fgets(puffer,PFR_L,f)!=NULL)
-	{
-		if(strncmp(puffer,"BEGIN ",6)==0)
-		{			
-			if(strncmp(puffer,begin_row,PFR_L)==0)
-			{							
-				if(save_no==id)
-				{
-					fscanf(f, "H %d\n", &nfo->h);
-					fscanf(f, "W %d\n", &nfo->w);
-					fscanf(f, "LIFES %d\n", &nfo->start_lifes);
-					if(nfo->pos!=NULL)
-					{
-						free(nfo->pos);
-						nfo->pos=NULL;
-					}
-					nfo->pos = (posi *) malloc(nfo->start_lifes*sizeof(posi));
-					for(i=0;i<nfo->start_lifes;i++)
-					{
-						fscanf(f, "%d,%d\n", &nfo->pos[i].x,&nfo->pos[i].y);
-					}
-					printf("Loading succeed\n%s\n%d\n%d\n%d",name,nfo->h,nfo->w,nfo->start_lifes);
-					fgets(puffer,PFR_L,f);
-					if(strncmp(puffer,"END",3)==0)
-						return;
-					else
-					{
-						fputs("Here should be the END!\nCheck the gameoflife.data file!",stderr);
-						exit(1);
-					}
-				}			
-			}
-			save_no++;
-		}					
-	}
-	return;
-}
-
-//
-int addSavedToMenu(char **menu, FILE *f, int saved_n)
-{
-	int i=0,j,k;
-	char puffer[PFR_L],name[PFR_L];
-	while(fgets(puffer,PFR_L,f)!=NULL)
-	{
-		if(strncmp(puffer,"BEGIN ",6)==0)
-		{
-			for(j=0;puffer[j]!=' '&&j<PFR_L;j++)
-				continue;
-			j++;
-			for(k=j;puffer[k]!='\n'&&k<PFR_L;k++)
-				name[k-j]=puffer[k];
-			name[k]='\0';					
-			appendItem(menu,name,saved_n,&i);
-			clrs(name,PFR_L);
-		}					
-	}
-	appendItem(menu,"Quit",saved_n,&i);
-	return i;
-}
-// Counts Saved Games in a file
-int countSaved(FILE *f)
-{
-	int i=0;
-	char puffer[150];
-	while((fgets(puffer,150,f))!= NULL)
-	{
-		if(strncmp(puffer,"BEGIN ",6)==0)
-		{	
-			i++;
-		}					
-	}
-	fseek(f,0L,SEEK_SET);
-	return i;
-}
 
 // Makes some initialisation work.
 void init(gameInfo *nfo)
@@ -541,7 +451,7 @@ void cpField(int **src, int **dst, gameInfo nfo)
 	}
 	return;
 }
-// Checks if anybody is alive
+// Counts the lifes on the field
 int living(int **field, gameInfo nfo)
 {
 	int i,j;
@@ -556,12 +466,110 @@ int living(int **field, gameInfo nfo)
 	}
 	return living;
 }
+// inits the gameoflife.data file
 FILE *initFile(char *name)
 {
 	FILE *f;
 	f=fopen(name,"a+");
+	if(f==NULL);
+		printf("Fatal Error: cannot open/create gameoflife.data!");
 	return f;
 }
+// Waits for key pressing
+void waitKey(char key)
+{
+	int run=1;
+	while(run)
+	{
+		usleep(20*1000);
+		if(getch_nonblock()==key) run=0;
+	}
+	return;	
+}
+// Loads a Game in the gameInfo struct
+void getSavedData(FILE *f, char *name, int id, gameInfo *nfo)
+{
+	int i,j,k,save_no=0;
+	char puffer[PFR_L],begin_row[PFR_L]="BEGIN ";
+	strncat(begin_row,name,PFR_L);
+	strncat(begin_row,"\n",PFR_L);
+	fseek(f,0L,SEEK_SET);
+	while(fgets(puffer,PFR_L,f)!=NULL)
+	{
+		if(strncmp(puffer,"BEGIN ",6)==0)
+		{			
+			if(strncmp(puffer,begin_row,PFR_L)==0)
+			{							
+				if(save_no==id)
+				{
+					fscanf(f, "H %d\n", &nfo->h);
+					fscanf(f, "W %d\n", &nfo->w);
+					fscanf(f, "LIFES %d\n", &nfo->start_lifes);
+					if(nfo->pos!=NULL)
+					{
+						free(nfo->pos);
+						nfo->pos=NULL;
+					}
+					nfo->pos = (posi *) malloc(nfo->start_lifes*sizeof(posi));
+					for(i=0;i<nfo->start_lifes;i++)
+					{
+						fscanf(f, "%d,%d\n", &nfo->pos[i].x,&nfo->pos[i].y);
+					}
+					printf("Loading succeed\n%s\n%d\n%d\n%d",name,nfo->h,nfo->w,nfo->start_lifes);
+					fgets(puffer,PFR_L,f);
+					if(strncmp(puffer,"END",3)==0)
+						return;
+					else
+					{
+						fputs("Here should be the END!\nCheck the gameoflife.data file!",stderr);
+						exit(1);
+					}
+				}			
+			}
+			save_no++;
+		}					
+	}
+	return;
+}
+
+// Adds alle saved Levels to the select menu
+int addSavedToMenu(char **menu, FILE *f, int saved_n)
+{
+	int i=0,j,k;
+	char puffer[PFR_L],name[PFR_L];
+	while(fgets(puffer,PFR_L,f)!=NULL)
+	{
+		if(strncmp(puffer,"BEGIN ",6)==0)
+		{
+			for(j=0;puffer[j]!=' '&&j<PFR_L;j++)
+				continue;
+			j++;
+			for(k=j;puffer[k]!='\n'&&k<PFR_L;k++)
+				name[k-j]=puffer[k];
+			name[k]='\0';					
+			appendItem(menu,name,saved_n,&i);
+			clrs(name,PFR_L);
+		}					
+	}
+	appendItem(menu,"Quit",saved_n,&i);
+	return i;
+}
+// Counts Saved Games in a file
+int countSaved(FILE *f)
+{
+	int i=0;
+	char puffer[150];
+	while((fgets(puffer,150,f))!= NULL)
+	{
+		if(strncmp(puffer,"BEGIN ",6)==0)
+		{	
+			i++;
+		}					
+	}
+	fseek(f,0L,SEEK_SET);
+	return i;
+}
+// Flushes the stdin
 void mFlush()
 {
 	char c;
@@ -569,6 +577,7 @@ void mFlush()
 		continue;
 	return;
 }
+// Overwrites (one) linefeed with NUL 
 void rmNl(char *s, int l)
 {
 	int i;
@@ -577,6 +586,7 @@ void rmNl(char *s, int l)
 	s[i]='\0';
 	return;
 }
+// Sets a full char Array to \0
 void clrs(char *s, int l)
 {
 	int i;

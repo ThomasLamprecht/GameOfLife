@@ -22,7 +22,7 @@ or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 #include <unistd.h>
 #include "modul_menu.h"
 
-#define H 10
+#define H 20
 #define DEAD -1
 #define ALIVE 1
 #define PFR_L 160
@@ -67,7 +67,7 @@ void writePositions(int **field, gameInfo nfo);
 // Visualisation
 void printField(int **field, gameInfo nfo);
 void printMx(int **field, gameInfo nfo);
-// Automat operations
+// Automaton operations
 void evalField(int **field, int **eval_field, gameInfo nfo);
 void executeRules(int **field, int **eval_field, gameInfo nfo);
 int isDead(int **field, gameInfo nfo);

@@ -15,3 +15,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
+
+building: Open shell and type "make" (without ") in the root folder from GameOfLife, done.
+For bugs and questions write info [at] gamer-source.org
