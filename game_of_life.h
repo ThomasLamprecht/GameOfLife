@@ -71,6 +71,7 @@ void printMx(int **field, gameInfo nfo);
 void evalField(int **field, int **eval_field, gameInfo nfo);
 void executeRules(int **field, int **eval_field, gameInfo nfo);
 int isDead(int **field, gameInfo nfo);
+void game(gameInfo *nfo, int loaded);
 // History operations
 void cpField(int **src, int **dst, gameInfo nfo);
 int checkReps(int **field, int ***history_field, int l, gameInfo nfo);

@@ -23,12 +23,12 @@ or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 int main(void)
 {
 	srand(time(NULL));
-	int i,run=1,oszil_chk=1;
+	int i;//,run=1,oszil_chk=1;
 	// Game specific Variables
-	int **field,**eval_field,**history[H];	 
+	//int **field,**eval_field,**history[H];	 
 	gameInfo nfo;
 	nfo.pos=NULL;
-	nfo.generations=0;
+	//nfo.generations=0;
 
 	int sel=0,size=5,real_size=0;
 	char **menu,tmp;
@@ -36,6 +36,7 @@ int main(void)
 	appendItem(menu,"Spielen",size,&real_size);
 	appendItem(menu,"Speichern",size,&real_size);
 	appendItem(menu,"Laden",size,&real_size);
+	appendItem(menu,"Über",size,&real_size);
 	appendItem(menu,"Verlassen",size,&real_size);
 	do
 	{
@@ -45,77 +46,8 @@ int main(void)
 		switch(sel)
 		{
 			case 0: // Run game
-			{				
-				if(nfo.pos!=NULL)free(nfo.pos);
-				init(&nfo);
-				load_label:
-				run=1;
-				oszil_chk=1;
-				field = createField(nfo);
-				eval_field = createField(nfo);
-				for(i=0;i<H;i++)
-				{
-					history[i]=createField(nfo);
-					clearField(history[i], nfo);
-				}
-				clearField(field, nfo);
-				writePositions(field, nfo);
-
-				// debugging purposed
-				// rndGame(field,nfo);
-
-				// main loop
-				while(run)
-				{
-					system("clear");
-					nfo.living = living(field,nfo);					
-					printField(field,nfo);
-					evalField(field,eval_field,nfo);
-					// Dead Check
-					if(nfo.living==0)
-					{
-						run=0;
-						printf("Es ist niemand mehr am Leben (Allein, Allein), Sie Monster! >_<\nNach %d Generationen.\n'q' zum fortfahren",nfo.generations);
-						waitKey('q');
-					}
-					// Equal Check START
-					if(oszil_chk&&run!=0)
-					{
-						if(checkReps(field,history,H,nfo))
-						{
-							oszil_chk=0;
-							printf("Lebensschemata wiederholt sich (Oszillierendes Objekt).\n");
-							printf("Spiel pausiert! Drücken Sie 'p' um fortzufahren...\nSollten sie das Spiel beenden wollen, fahren sie fort und betätigen 'q'.\n");		
-							waitKey('p');							
-						}
-					}
-					mvFieldArray(history,H);
-					cpField(field,history[0],nfo);
-					// Equal Check END
-					executeRules(field,eval_field,nfo);
-					nfo.generations++;
-					// Input Op's
-					tmp = getch_nonblock();					
-					if(tmp=='q')
-					{
-						run=0;
-						continue;
-					}
-					else if(tmp=='p')
-					{
-						printf("Spiel pausiert! Drücken Sie 'p' erneut um fortzufahren...\n");
-						waitKey('p');
-						continue;
-					}
-					usleep(nfo.delay*1000);
-
-				}
-
-				// tidy up
-				for(i=0;i<H;i++)
-					freeField(history[i],nfo.h);
-				freeField(field,nfo.h);
-				freeField(eval_field,nfo.h);				
+			{	
+				game(&nfo,0);						
 				break;
 			}
 			case 1: // Save
@@ -137,9 +69,9 @@ int main(void)
 				for(i=0;i<nfo.start_lifes;i++)
 					fprintf(f,"\t%d,%d\n",nfo.pos[i].x,nfo.pos[i].y);
 				fprintf(f,"END\n\n");
-				printf("Speichern von \"%s\" Erfolgreich!\nWeiter mit 'q'...\n",puffer);						
+				printf("Speichern von \"%s\" Erfolgreich!\nWeiter mit Enter...\n",puffer);						
 				fclose(f);
-				waitKey('q');
+				waitKey('\n');
 				break;
 			}
 			case 2: // Load
@@ -154,33 +86,120 @@ int main(void)
 					sel_game=getSelection(data_menu,0,saved_real_s+1);
 					if(sel_game==saved_n-1) break;
 					printf("You chose \"%s\"\n",data_menu[sel_game]);
+					printf("%d\n",__LINE__); // <- The famous debugging helper ;)
 					getSavedData(f, data_menu[sel_game], sel_game, &nfo);
-					/*if(nfo.pos!=NULL) // Get this Fuck away to let loading be functionally
-					{
-						free(nfo.pos);
-						nfo.pos=NULL;
-					}*/
+					printf("%d\n",__LINE__); // <- The famous debugging helper ;)
 					freeMenu(data_menu,saved_n);
 					printf("Delay/clock [ms]:\t");
 					scanf("%d",&nfo.delay);
-					goto load_label;
-					waitKey('q');					
+					game(&nfo,1);					
 				}
 				else
 				{
-					printf("Es sind keine gespeicherten Spiele vorhanden!\nDrücken Sie 'q' um zum Menü zurückzukehren.\n");
-					waitKey('q');
+					printf("Es sind keine gespeicherten Spiele vorhanden!\nDrücken Sie Enter um zum Menü zurückzukehren.\n");
+					waitKey('\n');
 				}
-				fclose(f);				
+								
+				break;
+			}
+			case 3:
+			{
+				system("clear");
+				printf("GAME OF LIFE\nCopyright (C) 2011  Thomas Lamprecht - GamerSource NPO\n\nProgramm Typ:\n\tZellulärer Automat\nUmsetzung:\n\tThomas Lamprecht\n\thttp://gamer-source.org\nErfinder:\n\tJohn Horton Conway\n"\
+				"Siehe:\n\thttp://de.wikipedia.org/wiki/Conways_Spiel_des_Lebens\n\thttp://de.wikipedia.org/wiki/John_Horton_Conway\n\thttp://de.wikipedia.org/wiki/Zellulärer_Automat\n\n"\
+				"Dieses Programm ist Freie Software.\nEs wurde unter der GPLv2 [GNU General Public License] lizenziert. Weitere Infos siehe README oder unter\n\thttp://www.gnu.org/licenses/gpl-2.0.html\n\n"\
+				"Source Dateien und weiterführende Entwicklungs Details unter:\n\thttps://github.com/GamerSource/GameOfLife\n\nWeiter mit Enter\n");
+				waitKey('\n');
 				break;
 			}	
 		}
-	}while(sel!=3);
+	}while(sel!=real_size);
 	printf("\nGood Bye... (:\n\n");
 	freeMenu(menu,size);
+	if(nfo.pos!=NULL)free(nfo.pos);
 	return 0;
 }
 
+void game(gameInfo *nfo, int loaded)
+{
+	int i,run=1,oszil_chk=1;
+	int **field,**eval_field,**history[H];	
+	char tmp;
+	nfo->generations=0;
+	
+	if(!loaded)
+	{
+		if(nfo->pos!=NULL)
+		{
+			if(nfo->pos!=NULL)free(nfo->pos);
+			nfo->pos=NULL;
+		}
+		init(nfo); // When we it isn't a loaded game, we init nfo
+	}
+	
+	field = createField(*nfo); // Creates the main game field
+	eval_field = createField(*nfo); // creates the evaluation Field
+	for(i=0;i<H;i++)
+	{
+		history[i]=createField(*nfo); // inits and clears the field for the oscillation/repetiton check
+		clearField(history[i], *nfo);
+	}
+	clearField(field, *nfo);
+	printf("%d\n",__LINE__); // <- The famous debugging helper ;)
+	writePositions(field, *nfo); // writes the start life positions in the game field
+	printf("%d\n",__LINE__); // <- The famous debugging helper ;)
+	// main loop
+	while(run)
+	{
+		system("clear");
+		nfo->living = living(field,*nfo); // returns the actual number of lifes				
+		printField(field,*nfo); // outputs the field ("interface" for a possible graphic output)
+		evalField(field,eval_field,*nfo); // calculates the neighbor number of each "square"
+		// Dead Check
+		if(nfo->living==0) // Exit main loop if nobody is living
+		{
+			run=0;
+			printf("Es ist niemand mehr am Leben (Allein, Allein), Sie Monster! >_<\nNach %d Generationen.\n'q' zum fortfahren",nfo->generations);
+			waitKey('q');
+		}
+		// Equal Check START
+		if(oszil_chk&&run!=0)
+		{
+			if(checkReps(field,history,H,*nfo))
+			{
+				oszil_chk=0;
+				printf("Lebensschemata wiederholt sich (Oszillierendes Objekt).\n");
+				printf("Spiel pausiert! Drücken Sie 'p' um fortzufahren...\nSollten sie das Spiel beenden wollen, fahren sie fort und betätigen 'q'.\n");		
+				waitKey('p');							
+			}
+		}
+		mvFieldArray(history,H);
+		cpField(field,history[0],*nfo);
+		// Equal Check END
+		executeRules(field,eval_field,*nfo); // Execute the GameOfLife rules 
+		nfo->generations++; // increment generation Number
+		// Input Op's
+		tmp = getch_nonblock();	// get char from queue (return -1 if no char)				
+		if(tmp=='q')
+		{
+			run=0;
+			continue;
+		}
+		else if(tmp=='p')
+		{
+			printf("Spiel pausiert! Drücken Sie 'p' erneut um fortzufahren...\n");
+			waitKey('p');
+			continue;
+		}
+		usleep(nfo->delay*1000); // A very simple and unbalacing/unstable "frame" regulator
+	}
+	// tidy up
+	for(i=0;i<H;i++)
+		freeField(history[i],nfo->h);
+	freeField(field,nfo->h);
+	freeField(eval_field,nfo->h);
+	return;
+}
 
 // Makes some initialisation work.
 void init(gameInfo *nfo)
@@ -200,7 +219,11 @@ void init(gameInfo *nfo)
 		scanf("%d",&nfo->start_lifes);
 		fail=1;
 	}while(nfo->start_lifes<1||nfo->start_lifes>nfo->w*nfo->h);
-	nfo->living = nfo->start_lifes;
+	if(nfo->pos!=NULL)
+	{
+		free(nfo->pos);
+		nfo->pos=NULL;
+	}
 	nfo->pos = (posi *) malloc(nfo->start_lifes*sizeof(posi));
 	printf("Insert life positions manually (0) or automatically(1):\t");
 	scanf("%d",&rnd);
@@ -228,12 +251,23 @@ void init(gameInfo *nfo)
 	return;
 }
 
-// Writes the lifes from the position Array in the field -- ATTENTION abuse may cause segemtation fault!
+// Writes the lifes from the position Array in the field
 void writePositions(int **field, gameInfo nfo)
 {
 	int i;
 	for(i=0;i<nfo.start_lifes;i++)
-		field[nfo.pos[i].y][nfo.pos[i].x] = ALIVE;
+	{
+		if((nfo.pos[i].y>=0&&nfo.pos[i].y<nfo.h)&&(nfo.pos[i].x>=0&&nfo.pos[i].x<nfo.w))
+		{
+			printf("%d::%d::%d,%d\n",__LINE__,i,nfo.pos[i].x,nfo.pos[i].y); // <- The famous debugging helper ;)
+			field[nfo.pos[i].y][nfo.pos[i].x] = ALIVE;
+		}
+		else
+		{
+			fputs("Corrupt x,y data! Check the gameoflife.data file!\n",stderr);
+			//exit(1);
+		}
+	}
 	return;
 }
 
@@ -471,7 +505,7 @@ FILE *initFile(char *name)
 {
 	FILE *f;
 	f=fopen(name,"a+");
-	if(f==NULL);
+	if(f==NULL)
 		printf("Fatal Error: cannot open/create gameoflife.data!");
 	return f;
 }
@@ -491,6 +525,11 @@ void getSavedData(FILE *f, char *name, int id, gameInfo *nfo)
 {
 	int i,j,k,save_no=0;
 	char puffer[PFR_L],begin_row[PFR_L]="BEGIN ";
+	if(nfo->pos!=NULL)
+	{
+		if(nfo->pos!=NULL)free(nfo->pos);						
+		nfo->pos=NULL;
+	}
 	strncat(begin_row,name,PFR_L);
 	strncat(begin_row,"\n",PFR_L);
 	fseek(f,0L,SEEK_SET);
@@ -504,24 +543,19 @@ void getSavedData(FILE *f, char *name, int id, gameInfo *nfo)
 				{
 					fscanf(f, "H %d\n", &nfo->h);
 					fscanf(f, "W %d\n", &nfo->w);
-					fscanf(f, "LIFES %d\n", &nfo->start_lifes);
-					if(nfo->pos!=NULL)
-					{
-						free(nfo->pos);
-						nfo->pos=NULL;
-					}
+					fscanf(f, "LIFES %d\n", &nfo->start_lifes);					
 					nfo->pos = (posi *) malloc(nfo->start_lifes*sizeof(posi));
 					for(i=0;i<nfo->start_lifes;i++)
 					{
-						fscanf(f, "%d,%d\n", &nfo->pos[i].x,&nfo->pos[i].y);
+						fscanf(f, "\t%d,%d\n", &nfo->pos[i].x,&nfo->pos[i].y);
 					}
-					printf("Loading succeed\n%s\n%d\n%d\n%d",name,nfo->h,nfo->w,nfo->start_lifes);
+					//printf("Loading succeed\n%s\n%d\n%d\n%d",name,nfo->h,nfo->w,nfo->start_lifes);
 					fgets(puffer,PFR_L,f);
 					if(strncmp(puffer,"END",3)==0)
 						return;
 					else
 					{
-						fputs("Here should be the END!\nCheck the gameoflife.data file!",stderr);
+						fputs("Here should be the END! Check the gameoflife.data file!\n",stderr);
 						exit(1);
 					}
 				}			
@@ -529,6 +563,7 @@ void getSavedData(FILE *f, char *name, int id, gameInfo *nfo)
 			save_no++;
 		}					
 	}
+	fclose(f);
 	return;
 }
 
