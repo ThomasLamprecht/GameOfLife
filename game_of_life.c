@@ -102,13 +102,13 @@ int main(void)
 								
 				break;
 			}
-			case 3:
+			case 3: // Some Informations over the project
 			{
 				system("clear");
-				printf("GAME OF LIFE\nCopyright (C) 2011  Thomas Lamprecht - GamerSource NPO\n\nProgramm Typ:\n\tZellulärer Automat\nUmsetzung:\n\tThomas Lamprecht\n\thttp://gamer-source.org\nErfinder:\n\tJohn Horton Conway\n"\
+				printf("GAME OF LIFE\tCopyright (C) 2011  Thomas Lamprecht - GamerSource NPO\nÜbersetzt am %s um %s\n\nProgramm Typ:\n\tZellulärer Automat\nUmsetzung:\n\tThomas Lamprecht\n\thttp://gamer-source.org\nErfinder:\n\tJohn Horton Conway\n"\
 				"Siehe:\n\thttp://de.wikipedia.org/wiki/Conways_Spiel_des_Lebens\n\thttp://de.wikipedia.org/wiki/John_Horton_Conway\n\thttp://de.wikipedia.org/wiki/Zellulärer_Automat\n\n"\
 				"Dieses Programm ist Freie Software.\nEs wurde unter der GPLv2 [GNU General Public License] lizenziert. Weitere Infos siehe README oder unter\n\thttp://www.gnu.org/licenses/gpl-2.0.html\n\n"\
-				"Source Dateien und weiterführende Entwicklungs Details unter:\n\thttps://github.com/GamerSource/GameOfLife\n\nWeiter mit Enter\n");
+				"Source Dateien und weiterführende Entwicklungs Details unter:\n\thttps://github.com/GamerSource/GameOfLife\n---------------------------------------------------------\nWeiter mit Enter\n",__DATE__,__TIME__);
 				waitKey('\n');
 				break;
 			}	
@@ -122,7 +122,7 @@ int main(void)
 
 void game(gameInfo *nfo, int loaded)
 {
-	int i,run=1,oszil_chk=1;
+	int i,run=1,oszil_chk=1,itmp;
 	int **field,**eval_field,**history[H];	
 	char tmp;
 	nfo->generations=0;
@@ -145,9 +145,7 @@ void game(gameInfo *nfo, int loaded)
 		clearField(history[i], *nfo);
 	}
 	clearField(field, *nfo);
-	printf("%d\n",__LINE__); // <- The famous debugging helper ;)
 	writePositions(field, *nfo); // writes the start life positions in the game field
-	printf("%d\n",__LINE__); // <- The famous debugging helper ;)
 	// main loop
 	while(run)
 	{
@@ -169,8 +167,15 @@ void game(gameInfo *nfo, int loaded)
 			{
 				oszil_chk=0;
 				printf("Lebensschemata wiederholt sich (Oszillierendes Objekt).\n");
-				printf("Spiel pausiert! Drücken Sie 'p' um fortzufahren...\nSollten sie das Spiel beenden wollen, fahren sie fort und betätigen 'q'.\n");		
-				waitKey('p');							
+				printf("Spiel pausiert! Drücken Sie 'p' um fortzufahren.\nBetätigen Sie 'q' um das Spiel zu beenden.\n");
+				itmp=waitKeys("qp",2);
+				if(itmp==0)
+				{
+					run=0;
+					continue;
+				}
+				else
+					continue;
 			}
 		}
 		mvFieldArray(history,H);
@@ -187,9 +192,15 @@ void game(gameInfo *nfo, int loaded)
 		}
 		else if(tmp=='p')
 		{
-			printf("Spiel pausiert! Drücken Sie 'p' erneut um fortzufahren...\n");
-			waitKey('p');
-			continue;
+			printf("Spiel pausiert!\n'p' um fortzufahren.\n'q' zum beenden\n");
+			itmp=waitKeys("qp",2);
+			if(itmp==0)
+			{
+				run=0;
+				continue;
+			}
+			else
+				continue;
 		}
 		usleep(nfo->delay*1000); // A very simple and unbalacing/unstable "frame" regulator
 	}
@@ -231,8 +242,11 @@ void init(gameInfo *nfo)
 	{
 		if(rnd)
 		{
-			nfo->pos[i].x = rand()%nfo->w;
-			nfo->pos[i].y = rand()%nfo->h;
+			do
+			{
+				nfo->pos[i].x = rand()%nfo->w;
+				nfo->pos[i].y = rand()%nfo->h;
+			}while(isInPos(nfo->pos,nfo->pos[i].x,nfo->pos[i].y,i));
 		}
 		else
 		{
@@ -500,6 +514,19 @@ int living(int **field, gameInfo nfo)
 	}
 	return living;
 }
+//
+int isInPos(posi *pos, int x, int y, int len)
+{
+	int i;
+	for(i=0;i<len;i++)
+	{
+		if(pos[i].x!=x)
+			continue;
+		else if(pos[i].y==y)
+			return 1;
+	}
+	return 0;	
+}
 // inits the gameoflife.data file
 FILE *initFile(char *name)
 {
@@ -519,6 +546,23 @@ void waitKey(char key)
 		if(getch_nonblock()==key) run=0;
 	}
 	return;	
+}
+// Waits for one of the Keys, and returns his no
+int waitKeys(char *keys, int n)
+{
+	int i;
+	char c;
+	while(1)
+	{
+		usleep(10*1000);
+		c=getch_nonblock();
+		for(i=0;i<n;i++)
+		{
+			if(c==keys[i])
+				return i;
+		}
+	}
+	return -1;	
 }
 // Loads a Game in the gameInfo struct
 void getSavedData(FILE *f, char *name, int id, gameInfo *nfo)

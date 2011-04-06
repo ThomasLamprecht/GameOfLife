@@ -19,30 +19,6 @@ or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 */
 #include "modul_menu.h"
 
-// example
-//int main(int c_args, char **args)
-//{
-//	int i,size=10,real_size=0;
-//	char **menu;
-//	menu = createMenu(size);
-//	appendItem(menu,"Test 1",size,&real_size);
-//	appendItem(menu,"Test 2",size,&real_size);
-//	appendItem(menu,"Test 3",size,&real_size);
-//	appendItem(menu,"Test 4",size,&real_size);
-//	appendItem(menu,"Test 5",size,&real_size);
-//	appendItem(menu,"Test 6",size,&real_size);
-//	appendItem(menu,"Test 7",size,&real_size);
-//	appendItem(menu,"Test 8",size,&real_size);
-//	appendItem(menu,"Test 9",size,&real_size);
-//	appendItem(menu,"Quit",size,&real_size);
-//	do
-//	{
-//		i=getSelection(menu,0,real_size+1);
-//		printf("%s selected\n",menu[i]);
-//	}while(i!=9);
-//	return 0;
-//}
-
 char** createMenu(int m_size)
 {
 	int i;
@@ -106,7 +82,6 @@ int getSelection(char **p, int start_pos, int m_size)
 			}
 			if(sel=='\n') return pos;
 			if(sel=='q') return m_size-1;
-			//else putchar(sel);
 		} 
 	}
 }

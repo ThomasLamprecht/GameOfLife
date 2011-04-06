@@ -58,6 +58,7 @@ const char alive_char = '#',dead_char=' ';
 
 void init(gameInfo *nfo);
 void waitKey(char key);
+int waitKeys(char *keys, int n);
 // Field operations
 int **createField(gameInfo nfo);
 void clearField(int **field, gameInfo nfo);
@@ -70,8 +71,9 @@ void printMx(int **field, gameInfo nfo);
 // Automaton operations
 void evalField(int **field, int **eval_field, gameInfo nfo);
 void executeRules(int **field, int **eval_field, gameInfo nfo);
-int isDead(int **field, gameInfo nfo);
+int living(int **field, gameInfo nfo);
 void game(gameInfo *nfo, int loaded);
+int isInPos(posi *pos, int x, int y, int len);
 // History operations
 void cpField(int **src, int **dst, gameInfo nfo);
 int checkReps(int **field, int ***history_field, int l, gameInfo nfo);
