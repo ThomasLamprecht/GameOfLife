@@ -17,6 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA
 or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 // printf("%d\n",__LINE__); // <- The famous debugging helper ;)
+/ \033[32m text \033[0m
 */
 #include "game_of_life.h"
 
@@ -61,7 +62,7 @@ int main(void)
 				FILE *f = initFile("gameoflife.data");
 				char puffer[150];
 				printf("Name des Spieles [Max 150 Zeichen;]:\n");
-				fflush(stdout);//mFlush();
+				fflush(stdout);
 				fgets(puffer,150,stdin);				
 				rmNl(puffer,150);
 				fprintf(f,"BEGIN %s\n",puffer);
@@ -86,9 +87,7 @@ int main(void)
 					sel_game=getSelection(data_menu,0,saved_real_s+1);
 					if(sel_game==saved_n-1) break;
 					printf("You chose \"%s\"\n",data_menu[sel_game]);
-					printf("%d\n",__LINE__); // <- The famous debugging helper ;)
 					getSavedData(f, data_menu[sel_game], sel_game, &nfo);
-					printf("%d\n",__LINE__); // <- The famous debugging helper ;)
 					freeMenu(data_menu,saved_n);
 					printf("Delay/clock [ms]:\t");
 					scanf("%d",&nfo.delay);
@@ -157,7 +156,7 @@ void game(gameInfo *nfo, int loaded)
 		if(nfo->living==0) // Exit main loop if nobody is living
 		{
 			run=0;
-			printf("Es ist niemand mehr am Leben (Allein, Allein), Sie Monster! >_<\nNach %d Generationen.\n'q' zum fortfahren",nfo->generations);
+			printf("Es ist niemand mehr am Leben (Allein, Allein), Sie Monster! >_<\nNach %ld Generationen.\n'q' zum fortfahren",nfo->generations);
 			waitKey('q');
 		}
 		// Equal Check START
@@ -273,13 +272,12 @@ void writePositions(int **field, gameInfo nfo)
 	{
 		if((nfo.pos[i].y>=0&&nfo.pos[i].y<nfo.h)&&(nfo.pos[i].x>=0&&nfo.pos[i].x<nfo.w))
 		{
-			printf("%d::%d::%d,%d\n",__LINE__,i,nfo.pos[i].x,nfo.pos[i].y); // <- The famous debugging helper ;)
 			field[nfo.pos[i].y][nfo.pos[i].x] = ALIVE;
 		}
 		else
 		{
 			fputs("Corrupt x,y data! Check the gameoflife.data file!\n",stderr);
-			//exit(1);
+			exit(1);
 		}
 	}
 	return;
@@ -313,7 +311,7 @@ void printField(int **field, gameInfo nfo)
 {
 	int i,j,k,l;
 	printf("| Generation: %ld\n",nfo.generations);
-	printf("| Zu Begin Lebend: %ld\t Aktuell Lebend: %ld\n",nfo.start_lifes,nfo.living);
+	printf("| Zu Begin Lebend: %u\t Aktuell Lebend: %u\n",nfo.start_lifes,nfo.living);
 	for(i=0;i<nfo.h;i++)
 	{
 		if(i==0)
@@ -387,7 +385,7 @@ void clearField(int **field, gameInfo nfo)
 	}
 	return;
 }
-// Prints a 2d int array
+// Prints a 2d int array // Debugging zeugs
 void printMx(int **field, gameInfo nfo)
 {
 	int i,j;

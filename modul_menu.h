@@ -7,6 +7,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+typedef struct _posi
+{
+	int x,y;
+} posi;
+
+
 int getch_nonblock(void);
 char** createMenu(int m_size);
 void* appendItem(char **p, char *text, int m_size, int *rsize);

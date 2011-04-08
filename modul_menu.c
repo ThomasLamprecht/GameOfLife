@@ -86,6 +86,27 @@ int getSelection(char **p, int start_pos, int m_size)
 	}
 }
 
+posi get2DSelection(char **p, posi pos, int m_size)
+{
+	int tmp;
+	tmp=waitKeys("wasd",2);
+	switch(tmp)
+	{
+		case 0:
+			pos.y--;
+			break;
+		case 1:
+			pos.x--;
+			break;
+		case 2:
+			pos.y++;
+		case 3:
+			pos.x++;
+			break; 
+	}
+	return pos;
+}
+
 void freeMenu(char **menu,int m_size)
 {
 	int i;
