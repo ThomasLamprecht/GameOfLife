@@ -22,15 +22,10 @@ or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 #include <unistd.h>
 #include "modul_menu.h"
 
-#define H 20
+#define H 100000
 #define DEAD -1
 #define ALIVE 1
 #define PFR_L 160
-
-typedef struct _posi
-{
-	int x,y;
-} posi;
 
 typedef struct _gameInfo
 {
