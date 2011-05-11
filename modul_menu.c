@@ -19,6 +19,24 @@ or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 */
 #include "modul_menu.h"
 
+// Waits for one of the Keys, and returns his no
+int waitKeys(char *keys, int n)
+{
+	int i;
+	char c;
+	while(1)
+	{
+		usleep(10*1000);
+		c=getch_nonblock();
+		for(i=0;i<n;i++)
+		{
+			if(c==keys[i])
+				return i;
+		}
+	}
+	return -1;	
+}
+
 char** createMenu(int m_size)
 {
 	int i;
@@ -89,7 +107,7 @@ int getSelection(char **p, int start_pos, int m_size)
 posi get2DSelection(char **p, posi pos, int m_size)
 {
 	int tmp;
-	tmp=waitKeys("wasd",2);
+	tmp=waitKeys("wasd",4);
 	switch(tmp)
 	{
 		case 0:

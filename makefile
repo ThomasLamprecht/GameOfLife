@@ -1,5 +1,5 @@
 CC = gcc
-version = 0.9.1b
+version = 0.9.9
 out = gof-$(version).bin
 
 gameoflife: game_of_life.o modul_menu.o

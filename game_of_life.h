@@ -22,7 +22,15 @@ or look at http://www.gnu.org/licenses/gpl-2.0-standalone.html
 #include <unistd.h>
 #include "modul_menu.h"
 
-#define H 100000
+#ifdef __unix__
+   #define clrscr() system("clear");
+#elif __WIN32__ || _MSC_VER
+   #define clrscr() system("cls")
+#else
+   #define clrscr() printf("\nError: Unsupported OS!\n\n")
+#endif
+
+#define H 15
 #define DEAD -1
 #define ALIVE 1
 #define PFR_L 160
@@ -34,35 +42,28 @@ typedef struct _gameInfo
 	posi *pos;
 } gameInfo;
 
-struct clist
-{
-	char *content;
-	int id;
-	struct clist *next;
-};
-
 struct posList
 {
 	posi pos;
 	struct posList *next;
 };
 
-const char alive_char = '#',dead_char=' ';
+const char alive_char = '#',dead_char=' ',cursor_char='X';
 
 // Prototypes
 
-void init(gameInfo *nfo);
+int **init(gameInfo *nfo);
 void waitKey(char key);
-int waitKeys(char *keys, int n);
 // Field operations
 int **createField(gameInfo nfo);
 void clearField(int **field, gameInfo nfo);
 void freeField(int **field, int h);
-void rndGame(int **field, gameInfo nfo);
+void rndGame(int **field, gameInfo nfo); // Debugging
 void writePositions(int **field, gameInfo nfo);
 // Visualisation
-void printField(int **field, gameInfo nfo);
-void printMx(int **field, gameInfo nfo);
+void printField(int **field, gameInfo nfo, int x, int y, int cursor);
+void printMx(int **field, gameInfo nfo); // Debugging
+int **interactiveSelection(gameInfo *nfo);
 // Automaton operations
 void evalField(int **field, int **eval_field, gameInfo nfo);
 void executeRules(int **field, int **eval_field, gameInfo nfo);
@@ -79,6 +80,6 @@ FILE *initFile(char *name);
 int countSaved(FILE *f);
 int addSavedToMenu(char **menu, FILE *f, int saved_n);
 void getSavedData(FILE *f, char *name, int id, gameInfo *nfo);
-void mFlush();
-void rmNl(char *s, int l);
-void clrs(char *s, int l);
+void mFlush(); // flush stdin until /n or /0
+void rmNl(char *s, int l); // removes newline
+void clrs(char *s, int l); // sets entire string to nul

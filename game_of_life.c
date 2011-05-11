@@ -103,17 +103,17 @@ int main(void)
 			}
 			case 3: // Some Informations over the project
 			{
-				system("clear");
+				clrscr();
 				printf("GAME OF LIFE\tCopyright (C) 2011  Thomas Lamprecht - GamerSource NPO\nÜbersetzt am %s um %s\n\nProgramm Typ:\n\tZellulärer Automat\nUmsetzung:\n\tThomas Lamprecht\n\thttp://gamer-source.org\nErfinder:\n\tJohn Horton Conway\n"\
 				"Siehe:\n\thttp://de.wikipedia.org/wiki/Conways_Spiel_des_Lebens\n\thttp://de.wikipedia.org/wiki/John_Horton_Conway\n\thttp://de.wikipedia.org/wiki/Zellulärer_Automat\n\n"\
-				"Dieses Programm ist Freie Software.\nEs wurde unter der GPLv2 [GNU General Public License] lizenziert. Weitere Infos siehe README oder unter\n\thttp://www.gnu.org/licenses/gpl-2.0.html\n\n"\
+				"Weitergabe & Lizenz:\n\tDieses Programm ist Freie Software.\n\tEs wurde unter der GPLv2 [GNU General Public License] lizenziert. Weitere Infos siehe README oder unter:\n\thttp://www.gnu.org/licenses/gpl-2.0.html\n\n"\
 				"Source Dateien und weiterführende Entwicklungs Details unter:\n\thttps://github.com/GamerSource/GameOfLife\n---------------------------------------------------------\nWeiter mit Enter\n",__DATE__,__TIME__);
 				waitKey('\n');
 				break;
 			}	
 		}
 	}while(sel!=real_size);
-	printf("\nGood Bye... (:\n\n");
+	printf("\nCu l4t3R 4llig4t0R (:\n\n");
 	freeMenu(menu,size);
 	if(nfo.pos!=NULL)free(nfo.pos);
 	return 0;
@@ -126,40 +126,44 @@ void game(gameInfo *nfo, int loaded)
 	char tmp;
 	nfo->generations=0;
 	
-	if(!loaded)
+	if(!loaded) // game loaded or not?
 	{
 		if(nfo->pos!=NULL)
 		{
-			if(nfo->pos!=NULL)free(nfo->pos);
+			free(nfo->pos);
 			nfo->pos=NULL;
 		}
-		init(nfo); // When we it isn't a loaded game, we init nfo
+		field=init(nfo); // when there isn't a loaded game, we init nfo
+	}
+	else
+	{
+		field = createField(*nfo); // creates the main game field
+		clearField(field,*nfo);
+		writePositions(field, *nfo); // writes the start life positions in the game field
 	}
 	
-	field = createField(*nfo); // Creates the main game field
 	eval_field = createField(*nfo); // creates the evaluation Field
 	for(i=0;i<H;i++)
 	{
 		history[i]=createField(*nfo); // inits and clears the field for the oscillation/repetiton check
-		clearField(history[i], *nfo);
+		clearField(history[i], *nfo);		
 	}
-	clearField(field, *nfo);
-	writePositions(field, *nfo); // writes the start life positions in the game field
+	
 	// main loop
 	while(run)
 	{
-		system("clear");
+		clrscr();
 		nfo->living = living(field,*nfo); // returns the actual number of lifes				
-		printField(field,*nfo); // outputs the field ("interface" for a possible graphic output)
+		printField(field,*nfo,-1,-1,-1); // outputs the field ("interface" for a possible graphic output) (the tree minuses indicate the function if we are in editor mode or not)
 		evalField(field,eval_field,*nfo); // calculates the neighbor number of each "square"
-		// Dead Check
+		// dead Check
 		if(nfo->living==0) // Exit main loop if nobody is living
 		{
 			run=0;
 			printf("Es ist niemand mehr am Leben (Allein, Allein), Sie Monster! >_<\nNach %ld Generationen.\n'q' zum fortfahren",nfo->generations);
 			waitKey('q');
 		}
-		// Equal Check START
+		// equal check START
 		if(oszil_chk&&run!=0)
 		{
 			if(checkReps(field,history,H,*nfo))
@@ -179,10 +183,11 @@ void game(gameInfo *nfo, int loaded)
 		}
 		mvFieldArray(history,H);
 		cpField(field,history[0],*nfo);
-		// Equal Check END
-		executeRules(field,eval_field,*nfo); // Execute the GameOfLife rules 
-		nfo->generations++; // increment generation Number
-		// Input Op's
+		// equal check END
+		
+		executeRules(field,eval_field,*nfo); // execute the GameOfLife rules 
+		nfo->generations++; // increment generation number
+		// input OP's
 		tmp = getch_nonblock();	// get char from queue (return -1 if no char)				
 		if(tmp=='q')
 		{
@@ -201,7 +206,7 @@ void game(gameInfo *nfo, int loaded)
 			else
 				continue;
 		}
-		usleep(nfo->delay*1000); // A very simple and unbalacing/unstable "frame" regulator
+		usleep(nfo->delay); // A very simple and unbalacing/unstable "frame" regulator
 	}
 	// tidy up
 	for(i=0;i<H;i++)
@@ -212,56 +217,72 @@ void game(gameInfo *nfo, int loaded)
 }
 
 // Makes some initialisation work.
-void init(gameInfo *nfo)
+int **init(gameInfo *nfo)
 {
-	int i,fail=0,rnd=0;
+	int i,j,tmp,fail=0,rnd=0,size=2,real_size=0;
+	int **tmpfield;
+	char **menu;
 	fflush(stdout);
+	
 	printf("Height:\t");
-	scanf("%d",&nfo->h);
+	scanf("%u",&nfo->h);
 	printf("Width:\t");
-	scanf("%d",&nfo->w);
+	scanf("%u",&nfo->w);
 	printf("Delay/clock [ms]:\t");
-	scanf("%d",&nfo->delay);
-	printf("Number of Lifes:\t");
-	do
-	{
-		if(fail) printf("Error, number of lifes must be between 1 and %d!\n",nfo->w*nfo->h);
-		scanf("%d",&nfo->start_lifes);
-		fail=1;
-	}while(nfo->start_lifes<1||nfo->start_lifes>nfo->w*nfo->h);
+	scanf("%u",&nfo->delay);
+	nfo->delay *= 1000;	
+		
+	menu = createMenu(size);
+	appendItem(menu,"Manuell",size,&real_size);
+	appendItem(menu,"Automatisch",size,&real_size);
+	mFlush();
+	rnd=getSelection(menu,rnd,real_size+1);	
 	if(nfo->pos!=NULL)
 	{
 		free(nfo->pos);
 		nfo->pos=NULL;
 	}
-	nfo->pos = (posi *) malloc(nfo->start_lifes*sizeof(posi));
-	printf("Insert life positions manually (0) or automatically(1):\t");
-	scanf("%d",&rnd);
-	for(i=0;i<nfo->start_lifes;i++)
-	{
-		if(rnd)
+	if(rnd)
+	{		
+		printf("Number of Lifes:\t");
+		do
+		{
+			if(fail) printf("Error, number of lifes must be between 1 and %d!\n",nfo->w*nfo->h);
+			scanf("%d",&nfo->start_lifes);
+			fail=1;
+		}while(nfo->start_lifes<1||nfo->start_lifes>nfo->w*nfo->h);		
+		nfo->pos = (posi *) malloc(nfo->start_lifes*sizeof(posi));
+		
+		tmpfield=createField(*nfo);
+		clearField(tmpfield,*nfo);
+		for(i=0;i<nfo->start_lifes;i++)
 		{
 			do
 			{
 				nfo->pos[i].x = rand()%nfo->w;
 				nfo->pos[i].y = rand()%nfo->h;
 			}while(isInPos(nfo->pos,nfo->pos[i].x,nfo->pos[i].y,i));
-		}
-		else
-		{
-			do
-			{
-				fail=0;
-				if(fail) printf("Error, position of life must be in x{0,%d} and y{0,%d} range.\n",nfo->w-1,nfo->h-1);
-				printf("[%d]->x:\t",i+1);
-				scanf("%d",&nfo->pos[i].x);
-				printf("[%d]->y:\t",i+1);
-				scanf("%d",&nfo->pos[i].y);
-				fail=1;
-			}while((nfo->pos->x <0||nfo->pos->x > nfo->w-1)||(nfo->pos->y <0||nfo->pos->y > nfo->h-1));
-		}
+		 }
+		 writePositions(tmpfield, *nfo); // writes the start life positions in the game field
 	}
-	return;
+	else
+	{
+		tmpfield = interactiveSelection(nfo);
+		nfo->pos = (posi *) malloc(nfo->start_lifes*sizeof(posi)); // worse workaround so that you can save manually made Games
+		tmp=0;
+		for(i=0;i<nfo->h;i++)
+		{
+			for(j=0;j<nfo->w;j++)
+			{
+				if(tmpfield[i][j]==ALIVE)
+				{
+					nfo->pos[tmp] = (posi) {j,i};
+					tmp++;
+				}
+			}
+		}
+	}	
+	return tmpfield;
 }
 
 // Writes the lifes from the position Array in the field
@@ -281,6 +302,56 @@ void writePositions(int **field, gameInfo nfo)
 		}
 	}
 	return;
+}
+
+int **interactiveSelection(gameInfo *nfo)
+{
+	unsigned int set=0,x=0,y=0;
+	int **tmpfield=createField(*nfo),cntr=0;
+	clearField(tmpfield,*nfo);
+	char cursor=1,tmp;
+		
+	while((tmp=getch_nonblock())!='\n')
+	{
+		clrscr();
+		if(tmp=='w')
+		{
+			y = (y+nfo->h-1)%nfo->h;
+			cursor=1;
+		}
+		if(tmp=='s')
+		{
+			y = (y+1)%nfo->h;
+			cursor=1;
+		}
+		if(tmp=='a')
+		{
+			x = (x+nfo->w-1)%nfo->w;
+			cursor=1;
+		}
+		if(tmp=='d')
+		{
+			x = (x+1)%nfo->w;
+			cursor=1;
+		}
+		if(tmp==' ')
+		{
+			tmpfield[y][x] = (tmpfield[y][x]==DEAD)?ALIVE:DEAD;
+			set = living(tmpfield,*nfo);
+		}
+		printf("Gesetzt: %u;\tCursor: %ux;\t%uy;\n",set,x,y);
+		printField(tmpfield,*nfo,x,y,cursor);
+		printf("\"w,a,s,d\" zum navigieren; \" \" (Spacebar) zum wechseln des Status; Enter zum abschließen\n");
+		if(cntr==5) // let the cursor blink AND the input be fast :)
+		{
+			cursor = !cursor;
+			cntr=0;
+		}
+		cntr++;
+		usleep(10000); 
+	}
+	nfo->start_lifes = living(tmpfield,*nfo);
+	return tmpfield;
 }
 
 // Returns an (dynamical) integer array with w*h dimensions
@@ -307,11 +378,14 @@ void freeField(int **field, int h)
 	return;
 }
 // The "drawing" directive for the field
-void printField(int **field, gameInfo nfo)
+void printField(int **field, gameInfo nfo, int x, int y, int cursor)
 {
 	int i,j,k,l;
-	printf("| Generation: %ld\n",nfo.generations);
-	printf("| Zu Begin Lebend: %u\t Aktuell Lebend: %u\n",nfo.start_lifes,nfo.living);
+	if(cursor==-1&&x==-1&&y==-1)
+	{
+		printf("| Generation: %ld\n",nfo.generations);
+		printf("| Zu Begin Lebend: %u\t Aktuell Lebend: %u\n",nfo.start_lifes,nfo.living);
+	}
 	for(i=0;i<nfo.h;i++)
 	{
 		if(i==0)
@@ -327,10 +401,17 @@ void printField(int **field, gameInfo nfo)
 		putchar('|');
 		for(j=0;j<nfo.w;j++)
 		{
-			if(field[i][j]==ALIVE)
-				putchar(alive_char);
+			if(cursor&&y==i&&x==j)
+			{
+				putchar(cursor_char);
+			}
 			else
-				putchar(dead_char);
+			{
+				if(field[i][j]==ALIVE)
+					putchar(alive_char);
+				else
+					putchar(dead_char);
+			}
 			if(j+1!=nfo.w) printf("|");
 		}
 		putchar('|');
@@ -356,7 +437,7 @@ void printField(int **field, gameInfo nfo)
 		}
 		putchar('\n');
 	}
-	putchar('\n');
+	//putchar('\n');
 	return;
 }
 // fills the field randomly with Lifes
@@ -544,23 +625,6 @@ void waitKey(char key)
 		if(getch_nonblock()==key) run=0;
 	}
 	return;	
-}
-// Waits for one of the Keys, and returns his no
-int waitKeys(char *keys, int n)
-{
-	int i;
-	char c;
-	while(1)
-	{
-		usleep(10*1000);
-		c=getch_nonblock();
-		for(i=0;i<n;i++)
-		{
-			if(c==keys[i])
-				return i;
-		}
-	}
-	return -1;	
 }
 // Loads a Game in the gameInfo struct
 void getSavedData(FILE *f, char *name, int id, gameInfo *nfo)
